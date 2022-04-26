@@ -1,5 +1,5 @@
 # cargo librerias
-pacman::p_load(tidyverse, Rtsne, mclust, e1071, cluster, flexclust, factoextra)
+pacman::p_load(tidyverse, Rtsne, mclust, e1071, cluster, flexclust)
 set.seed(42)
 
 # cargo la data y aplico los mismos tratamientos que en el caso de DBScan
