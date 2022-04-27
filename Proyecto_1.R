@@ -1,4 +1,4 @@
-pacman::p_load(dbscan, tidyverse, Rtsne, factoextra)
+pacman::p_load(dbscan, tidyverse, Rtsne, factoextra,dplyr)
 #Aca lee el archivo y lo convierte en un objeto
 #Selecionar las columnas que mejor representan la cancion y evitar los datos no númericos
 beats <- readRDS("~/GitHub/Mineria-de-datos/beats.rds") %>%
@@ -27,10 +27,11 @@ points(cl$centers, col = 1:4, pch = 8)
 
 rm(beats_sample,tsne_beats_sample)
 
-################################################################################
+#------------------------------------------------------------------------------
 
 beats <- readRDS("~/GitHub/Mineria-de-datos/beats.rds")%>%
   select(danceability,energy,key,loudness,mode,speechiness,acousticness,instrumentalness,liveness,valence,tempo,time_signature,duration_ms)
+
 tsne_beats <- Rtsne(beats,num_threads=0,check_duplicates=F)%>%
   .$Y %>% 
   as.data.frame()
@@ -46,8 +47,34 @@ points(cl$centers, col = 1:4, pch = 8)
 #Asignar los clusters a la matriz original de canciones
 
 data1 <- cbind(beats, cl$cluster)
+#------------------------------------------------------------------------
+#suponiendo que el codigo logra converger:
+
+song_id=readline("ingresar track id:")
+match(song_id,beats$track_id)
+#con el match encontrar el cluster al que pertence
 
 
+#Una vez con el cluster, crear una lista para obtener todas las canciones que pertencen a ese cluster
+
+
+#Con la lista, crear un ciclo que tome canciones del mismo cluster y rellene una lista hasta llegar a las 3 hrs
+#EVITAR REPETIR CANCIONES DENTRO DEL GRUPO
+
+
+#---------------------------------------------------------------------
+#Otro modelo de clustering:
+
+
+
+
+
+
+#################################################
+#Funcion replace en caso de que se necesite dejar sin NULL las casillas
+#replace(.=="NULL", 0) # replace with NA
+#--------------------------------------------------
+##RAZONAMIENTO HECHO PARA ESCOJER EL NR DE CLUSTERS EN K-MEANS
 #It is worth highlighting that each cluster will comprise songs from several and different music genres due to the cluster is not based on the 
 #genres attributes but it is based on the song audio attributes, thus we may find some songs that share similar attributes -inter-genres- despite 
 #they were tagged into different genres.
