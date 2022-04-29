@@ -1,5 +1,5 @@
 #Librerías ocupadas
-pacman::p_load(dbscan, tidyverse, Rtsne, factoextra,dplyr,ggplot2,e1071,prodlim)
+pacman::p_load(dbscan, tidyverse, Rtsne, factoextra,dplyr,ggplot2,e1071,prodlim,FactoMineR)
 #TRABAJO CON LA MUESTRA DE LOS DATOS----
 #Acá lee el archivo y lo convierte en un objeto Data Frame
 #Seleccionar las columnas que mejor representan la canción y evitar los datos no numéricos
@@ -81,8 +81,26 @@ while (sum(song_list$duration_ms)<10800000){#Condición para que llegue a las 3 
 }
 
 #Otro modelo de Clustering----(TERMINAR, NO SE ME OCURRE QUE MODELO OCUPAR AIUDAAA)----
+set.seed(40)
+Sample5K<-sample(nrow(tsne_beats),nrow(tsne_beats)/20)
+## Cluster the sample
+DM5K = dist(tsne_beats[Sample5K,])
+HC5K = hclust(DM5K, method="single")
+Groups = cutree(HC5K, 8)
+Groups[Groups>4] = 4
+plot(tsne_beats[Sample5K,], pch=20, col=rainbow(4, alpha=c(0.2,0.2,0.2,1))[Groups])
+##
+Core = which(Groups<4)
+library(class)
+knnClust = knn(tsne_beats[Sample5K[Core], ], tsne_beats, Groups[Core])
+plot(tsne_beats, pch=20, col=rainbow(3, alpha=0.1)[knnClust])
 
+#cah.test <- HCPC(tsne_beats, graph=FALSE, nb.clust=-1)----
 
+# CAH with kmeans : work quickly
+cl <- kmeans(tsne_beats, 4, iter.max=20)
+cah <- HCPC(cl$centers, graph=FALSE, nb.clust=-1)
+plot.HCPC(cah, choice="tree")
 
 
 
