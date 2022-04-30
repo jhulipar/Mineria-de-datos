@@ -1,5 +1,6 @@
 #Librerías ocupadas
-pacman::p_load(dbscan, tidyverse, Rtsne, factoextra,dplyr,ggplot2,e1071,prodlim,FactoMineR)
+pacman::p_load(dbscan, tidyverse, Rtsne, factoextra,dplyr,ggplot2,e1071,prodlim,FactoMineR,reshape2)
+
 #TRABAJO CON LA MUESTRA DE LOS DATOS----
 #Acá lee el archivo y lo convierte en un objeto Data Frame
 #Seleccionar las columnas que mejor representan la canción y evitar los datos no numéricos
@@ -25,13 +26,33 @@ ggplot(tsne_beats_sample, aes(V1, V2)) + geom_point()
 fviz_nbclust(tsne_beats_sample, kmeans, method = "silhouette")
 #Ejecutar el método de k-means para el k nr de centroides que muestra la figura anterior, en este caso 4
 cl<-kmeans(tsne_beats_sample,4)
-#data1 <- cbind(beats_sample, cl$cluster)
+beats_sample <- cbind(beats_sample, cl$cluster)
+##setwd("~/GitHub/Mineria-de-datos/proyectos")
+##save(beats_sample,file = "beats_sample.Rda")
 #Visualizar los datos y sus clusters
 plot(tsne_beats_sample, col = cl$cluster)
 points(cl$centers, col = 1:4, pch = 8)
+
 #Boxplot para poder interpretar el número K obtenido anteriormente----(TERMINAR)----
-bclust(beats_sample,centers=4,base.method = "kmeans")%>%
-  boxplot()
+#beats.m <- melt(beats_sample, id.vars = "cl$cluster")
+#boxplot(beats,m$value~beats_sample$`cl$cluster`)
+boxplot(len ~ dose, data = ToothGrowth,
+        boxwex = 0.25, at = 1:3 - 0.2,
+        subset = supp == "VC", col = "yellow",
+        main = "Guinea Pigs' Tooth Growth",
+        xlab = "Vitamin C dose mg",
+        ylab = "tooth length",
+        xlim = c(0.5, 3.5), ylim = c(0, 35), yaxs = "i")
+boxplot(len ~ dose, data = ToothGrowth, add = TRUE,
+        boxwex = 0.25, at = 1:3 + 0.2,
+        subset = supp == "OJ", col = "orange")
+legend(2, 9, c("Ascorbic acid", "Orange juice"),
+       fill = c("yellow", "orange"))
+#beats.m <- melt(beats_sample, id.vars = "cl$cluster")
+#ggplot(beats.m, aes("cl$cluster", value)) + geom_boxplot()
+
+
+
 #Eliminar los datos anteriormente usados para poder ocupar el máximo de memoria posible----------------------
 
 rm(beats_sample,tsne_beats_sample)
