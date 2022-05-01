@@ -1,11 +1,11 @@
-#Librerías ocupadas
+##Librerías ocupadas
 pacman::p_load(dbscan, tidyverse, Rtsne, factoextra,dplyr,ggplot2,e1071,prodlim,FactoMineR,reshape2)
 
 #TRABAJO CON LA MUESTRA DE LOS DATOS----
 #Acá lee el archivo y lo convierte en un objeto Data Frame
 #Seleccionar las columnas que mejor representan la canción y evitar los datos no numéricos
 beats <- readRDS("~/GitHub/Mineria-de-datos/beats.rds") %>%
-  select(danceability,energy,key,loudness,mode,speechiness,acousticness,instrumentalness,liveness,valence,tempo,time_signature,duration_ms)%>%
+  select(danceability,energy,loudness,speechiness,acousticness,instrumentalness,liveness,valence,tempo)%>%
   unique()#Evitar los datos que se repiten
 #Establecer una semilla para obtener resultado repetibles
 set.seed(40)
@@ -19,43 +19,79 @@ tsne_beats_sample <- Rtsne(beats_sample,num_threads=0)%>%
   .$Y %>% 
   as.data.frame()
 #Graficar los datos (si queremos)
-ggplot(tsne_beats_sample, aes(V1, V2)) + geom_point()
+##ggplot(tsne_beats_sample, aes(V1, V2)) + geom_point()
+
 #Mostrar como varia la silueta en función del nr de clusters, para poder escoger un número ideal de clusters
 #CABE MENCIONAR QUE ESTA FUNCIÓN FUE USADA EN UN COMPUTADOR CON 16GB DE RAM. 
-#POR LO TANTO, SI SE OCUPA EN UN COMPUTADOR CON MENOR RAM, SE REQUIERE REDUCIR AÚN MÁS LA MUESTRA
-fviz_nbclust(tsne_beats_sample, kmeans, method = "silhouette")
+#POR LO TANTO, SI SE OCUPA EN UN COMPUTADOR CON MENOR RAM, SE REQUIERE REDUCIR AÚN MÁS LA MUESTRA EN LA LINEA 15
+##fviz_nbclust(beats_sample, kmeans, method = "silhouette")
+
 #Ejecutar el método de k-means para el k nr de centroides que muestra la figura anterior, en este caso 4
 cl<-kmeans(tsne_beats_sample,4)
 beats_sample <- cbind(beats_sample, cl$cluster)
-##setwd("~/GitHub/Mineria-de-datos/proyectos")
-##save(beats_sample,file = "beats_sample.Rda")
-#Visualizar los datos y sus clusters
-plot(tsne_beats_sample, col = cl$cluster)
-points(cl$centers, col = 1:4, pch = 8)
 
-#Boxplot para poder interpretar el número K obtenido anteriormente----(TERMINAR)----
-#beats.m <- melt(beats_sample, id.vars = "cl$cluster")
-#boxplot(beats,m$value~beats_sample$`cl$cluster`)
-boxplot(len ~ dose, data = ToothGrowth,
-        boxwex = 0.25, at = 1:3 - 0.2,
-        subset = supp == "VC", col = "yellow",
-        main = "Guinea Pigs' Tooth Growth",
-        xlab = "Vitamin C dose mg",
-        ylab = "tooth length",
-        xlim = c(0.5, 3.5), ylim = c(0, 35), yaxs = "i")
-boxplot(len ~ dose, data = ToothGrowth, add = TRUE,
-        boxwex = 0.25, at = 1:3 + 0.2,
-        subset = supp == "OJ", col = "orange")
-legend(2, 9, c("Ascorbic acid", "Orange juice"),
-       fill = c("yellow", "orange"))
-#beats.m <- melt(beats_sample, id.vars = "cl$cluster")
-#ggplot(beats.m, aes("cl$cluster", value)) + geom_boxplot()
+#Visualizar los datos y sus clusters (Si queremos)
+##plot(tsne_beats_sample, col = cl$cluster)
+##points(cl$centers, col = 1:4, pch = 8)
+
+#Resaltar que cada cluster comprenderá canciones de varios y diferentes géneros musicales 
+#debido a que el cluster no se basa en los atributos de los géneros sino en los atributos del audio de la canción,
+#por lo que podemos encontrar que algunas canciones que comparten atributos similares entre géneros, a pesar de que fueron etiquetados en diferentes géneros.
 
 
 
-#Eliminar los datos anteriormente usados para poder ocupar el máximo de memoria posible----------------------
+#Boxplot para poder interpretar el significado de los clusters obtenido anteriormente----
+beats.m <- melt(beats_sample, id.vars = "cl$cluster")
+boxplot(value ~ `cl$cluster`, data = beats.m,
+        boxwex = 0.04, at= 1:4 - 0.175,
+        subset=variable=="danceability",
+        main = "Componentes de las canciones según cluster",
+        col = "lightsalmon",
+        xlab = "Nr de Cluster",
+        ylab = "Valores escalados",
+        yaxs="i",outline=FALSE)
+boxplot(value ~ `cl$cluster`, data = beats.m, add = TRUE,
+        at= 1:4 - 0.125,
+        boxwex = 0.04,outline=FALSE,
+        subset = variable == "energy",col = 2)
+boxplot(value ~ `cl$cluster`, data = beats.m, add = TRUE,
+        at= 1:4 - 0.075,
+        boxwex = 0.04,outline=FALSE,
+        subset = variable == "loudness",col = 3)
+boxplot(value ~ `cl$cluster`, data = beats.m, add = TRUE,
+        at= 1:4 - 0.025,
+        boxwex = 0.04,outline=FALSE,
+        subset = variable == "speechiness",col = 4)
+boxplot(value ~ `cl$cluster`, data = beats.m, add = TRUE,
+        at= 1:4 + 0.025,
+        boxwex = 0.04,outline=FALSE,
+        subset = variable == "acousticness",col = 5)
+boxplot(value ~ `cl$cluster`, data = beats.m, add = TRUE,
+        at= 1:4 + 0.075,
+        boxwex = 0.04,outline=FALSE,
+        subset = variable == "instrumentalness",col = 6)
+boxplot(value ~ `cl$cluster`, data = beats.m, add = TRUE,
+        at= 1:4 + 0.125,
+        boxwex = 0.04,outline=FALSE,
+        subset = variable == "liveness",col = 7)
+boxplot(value ~ `cl$cluster`, data = beats.m, add = TRUE,
+        at= 1:4 + 0.175,
+        boxwex = 0.04,outline=FALSE,
+        subset = variable == "valence",col = 8)
+boxplot(value ~ `cl$cluster`, data = beats.m, add = TRUE,
+        at= 1:4 + 0.225,
+        boxwex = 0.04,outline=FALSE,
+        subset = variable == "tempo",col = "seashell")
+legend("topleft",cex = 0.6, c("danceability", "liveness","energy","loudness",
+                     "speechiness","acousticness","instrumentalness","valence","tempo"),
+       fill = c("lightsalmon",2,3,4,5,6,7,8,"seashell"))
+#En el cluster 1 se puede apreciar que hay música con bajos valores en liveliness,danceability y tempo, lo que se puede traducir como canciones melancólicas y con alta acústica
 
-rm(beats_sample,tsne_beats_sample)
+
+
+#Eliminar los datos anteriormente usados para poder ocupar el máximo de memoria posible al momento de trabajar con todos los datos-----
+
+rm(beats_sample,tsne_beats_sample,beats.m,cl)
 
 #TRABAJO CON LA BASE COMPLETA DE LOS DATOS----(TERMINAR comentarios)----
 
@@ -67,7 +103,7 @@ tsne_beats <- Rtsne(beats,num_threads=0,check_duplicates=F)%>%
   .$Y %>% 
   as.data.frame()
 #Graficar los datos (si queremos)
-ggplot(tsne_beats, aes(V1, V2)) + geom_point()
+##ggplot(tsne_beats, aes(V1, V2)) + geom_point()
 
 #Ejecutar el método de k-means para el k nr de centroides
 cl<-kmeans(tsne_beats,4)
@@ -116,7 +152,7 @@ library(class)
 knnClust = knn(tsne_beats[Sample5K[Core], ], tsne_beats, Groups[Core])
 plot(tsne_beats, pch=20, col=rainbow(3, alpha=0.1)[knnClust])
 
-#cah.test <- HCPC(tsne_beats, graph=FALSE, nb.clust=-1)----
+#cah.test <- HCPC(tsne_beats, graph=FALSE, nb.clust=-1)
 
 # CAH with kmeans : work quickly
 cl <- kmeans(tsne_beats, 4, iter.max=20)
@@ -127,11 +163,3 @@ plot.HCPC(cah, choice="tree")
 
 
 
-#Anotaciones----
-#Funcion replace en caso de que se necesite dejar sin NULL las casillas
-#replace(.=="NULL", 0) # replace with NA
-#####################---
-##RAZONAMIENTO HECHO PARA ESCOJER EL NR DE CLUSTERS EN K-MEANS
-#It is worth highlighting that each cluster will comprise songs from several and different music genres due to the cluster is not based on the 
-#genres attributes but it is based on the song audio attributes, thus we may find some songs that share similar attributes -inter-genres- despite 
-#they were tagged into different genres.
