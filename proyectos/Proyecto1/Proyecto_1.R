@@ -1,6 +1,6 @@
 ##Created by Jhul Iparraguirre Castro##
 #Librerías ocupadas
-pacman::p_load(dbscan, tidyverse, Rtsne, factoextra,dplyr,ggplot2,e1071,prodlim,FactoMineR,reshape2)
+pacman::p_load(tidyverse, kknn)
 
 #TRABAJO CON LA MUESTRA DE LOS DATOS----
 #Cambiar directorio si los datos iniciales no se encuentran en esa ubicación
