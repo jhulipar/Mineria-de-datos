@@ -1,65 +1,100 @@
 # cargo librerias
-pacman::p_load(tidymodels, kknn)
-
+pacman::p_load(tidymodels, kknn,tidymodels, discrim,kernlab,MLmetrics)
+set.seed(44)
 # define funciones de tidymodels por defecto
 tidymodels_prefer()
 
-train_data<-read.csv("~/GitHub/Mineria-de-datos/proyectos/Proyecto 2/ALUMNOS-trainData.csv")%>%
-  unique()
-eval_data<-read.csv("~/GitHub/Mineria-de-datos/proyectos/Proyecto 2/ALUMNOS-evalData.csv")%>%
-  unique()
-train_data$class<-with(train_data,ifelse(noshow>=4,1,0))
-train_data<-subset()
-# modelo prediccion
-# cargamos la data
-data(Chicago)
+train_data<-read.csv("~/GitHub/Mineria-de-datos/proyectos/Proyecto 2/ALUMNOS-trainData.csv")%>% 
+  unique() %>%
+  sample_n(10000)
+#Limpiar data
+sapply(train_data, function(x) sum(is.na(x))) #Comprueba cantidad de NA
+train_data =train_data[!is.na(train_data$departure_time),] #Borrar NA 
+train_data =train_data[!duplicated(train_data$id),] #Borrar id duplicado
+train_data$class<-with(train_data,ifelse(noshow>=4,1,0)) #Asignar a class 0 y 1 dependiendo de NoShow
+train_data$noshow <- NULL #Borrar NoShow para entrenar correctamente
+data_split_strat <- initial_split(train_data, prop = 3/4, strata = class)
+train_data <- training(data_split_strat)
+test_data  <- testing(data_split_strat)
 
-# identificamos el numero de filas
-n <- nrow(Chicago)
+train_data %>% 
+  count(class) %>% 
+  mutate(prop = n/sum(n))
+train_data<-mutate(train_data,class=factor(class),date = lubridate::as_date(date))%>%
+  mutate_if(is.character, as.factor)
+#Seleccionar las variables
+train_data<-select(train_data,class,date,departure_time,destination)
+# generamos la receta
+receta <- 
+  recipe(class ~ ., data = train_data) 
 
-# seleccionamos variables relevantes
-Chicago <- Chicago %>% select(ridership, Clark_Lake, Quincy_Wells)
+receta
 
-# separo datos de entrenamiento y de prueba
-Chicago_train <- Chicago[1:(n - 7), ]
-Chicago_test <- Chicago[(n - 6):n, ]
+#definimos el modelo con 1 grado polinomial
+modelo <- svm_poly(degree = 1) %>% 
+  set_engine("kernlab") %>% 
+  set_mode("classification") %>% 
+  translate()
 
-# construyo el modelo
-knn_reg_spec <-
-  nearest_neighbor(neighbors = 5, weight_func = "triangular") %>%
-  set_mode("regression") %>%
-  set_engine("kknn")
 
-# veo el modelo
-knn_reg_spec
+modelo
 
-# ajusto parametros del modelo
-knn_reg_fit <- knn_reg_spec %>% fit(ridership ~ ., data = Chicago_train)
-# veo prediccion
-knn_reg_fit
+# definimos funcion fitea igual que otras oportunidades
+fitea <- function(mod){
+  
+  modelo_fit <- 
+    workflow() %>% 
+    add_model(mod) %>% 
+    add_recipe(receta) %>% 
+    fit(data = train_data)
+  
+  model_pred <- 
+    predict(modelo_fit, test_data, type = "prob") %>% 
+    bind_cols(test_data) 
+  
+  return(model_pred %>% 
+           roc_auc(truth = Exited, .pred_0))
+}
 
-# predigo valores para conjunto de prueba
-predict(knn_reg_fit, Chicago_test)
+# ajustamos el modelo
+fitea(modelo)
 
-## clasificacion
+# generamos otra funcion para fitear en diferentes grados polinomiales
+fitea_polySVM <- function(grado){
+  
+  mod <- svm_poly(degree = grado) %>% 
+    set_engine("kernlab") %>% 
+    set_mode("classification") %>% 
+    translate()
+  
+  modelo_fit <- 
+    workflow() %>% 
+    add_model(mod) %>% 
+    add_recipe(receta) %>% 
+    fit(data = train_data)
+  
+  model_pred <- 
+    predict(modelo_fit, test_data, type = "prob") %>% 
+    bind_cols(test_data) 
+  
+  return(model_pred %>% 
+           metrics(class, .pred_class))
+}
+mod <- svm_poly(degree = 1) %>% 
+  set_engine("kernlab") %>% 
+  set_mode("classification") %>% 
+  translate()
 
-# cargo la data
-data(two_class_dat)
+modelo_fit <- 
+  workflow() %>% 
+  add_model(mod) %>% 
+  add_recipe(receta) %>% 
+  fit(data = train_data)
 
-# separo datos de entrenamiento y de prueba
-data_train <- two_class_dat[-(1:10), ]
-data_test  <- two_class_dat[  1:10 , ]
-
-knn_cls_spec <-
-  nearest_neighbor(neighbors = 11, weight_func = "triangular") %>%
-  set_mode("classification") %>%
-  set_engine("kknn")
-knn_cls_spec
-
-knn_cls_fit <- knn_cls_spec %>% fit(Class ~ ., data = data_train)
-knn_cls_fit
-
-bind_cols(
-  predict(knn_cls_fit, data_test),
-  predict(knn_cls_fit, data_test, type = "prob")
-)
+model_pred <- 
+  predict(modelo_fit, test_data, type = "prob") %>% 
+  bind_cols(test_data)
+F1_Score(test_data$is_female,model_pred$is_female)
+fitea_polySVM(1)
+fitea_polySVM(2)
+fitea_polySVM(3)
